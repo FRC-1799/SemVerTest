@@ -1,0 +1,72 @@
+plugins {
+    id 'java'
+    id("io.github.andreabrighi.android-git-sensitive-semantic-versioning-gradle-plugin") version "1.0.2"
+}
+
+group = 'org.frc1799'
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+
+//
+// Everything below here is for versioning
+// Uses the following plugin
+// https://github.com/AndreaBrighi/Gradle-Git-Sensitive-Semantic-Versioning-Plugin-for-Android
+//
+// TLDR; will follow tags with the format of 1.0.0 and create incremental versions in branches for you
+//
+
+// create a property that reports git branch
+def branchName = gitBranch()
+def gitBranch() {
+    def branch = ""
+    def proc = "git rev-parse --abbrev-ref HEAD".execute()
+    proc.in.eachLine { line -> branch = line }
+    proc.err.eachLine { line -> println line }
+    proc.waitFor()
+    branch
+}
+
+// task that reports verison created by plugin
+tasks.register('printVersion') {
+    doLast {
+        println "$version branch: $branchName"
+    }
+}
+
+// create task that copies everything in template directory replacing embedded properties as needed
+def copyTemplates = tasks.register("versionTemplate", Copy) {
+    into layout.buildDirectory.dir('generated/sources/template/java')
+    from 'src/main/template'
+    include '**/*.java'
+    expand(
+            version: version,
+            branchName: branchName
+    )
+}
+// make sure we use generated source
+sourceSets {
+    main {
+        java {
+            srcDir(copyTemplates)
+        }
+    }
+}
+
+// way to print version during build
+tasks.assemble {
+    dependsOn('printVersion')
+}
