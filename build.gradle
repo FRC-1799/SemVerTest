@@ -56,6 +56,7 @@ def copyTemplates = tasks.register("versionTemplate", Copy) {
             version: version,
             branchName: branchName
     )
+    outputs.upToDateWhen { false }
 }
 // make sure we use generated source
 sourceSets {
