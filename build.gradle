@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id("io.github.andreabrighi.android-git-sensitive-semantic-versioning-gradle-plugin") version "1.0.2"
+    id "com.peterabeles.gversion" version "1.10"
 }
 
 group = 'org.frc1799'
@@ -47,22 +48,22 @@ tasks.register('printVersion') {
     }
 }
 
-// create task that copies everything in template directory replacing embedded properties as needed
-def copyTemplates = tasks.register("versionTemplate", Copy) {
-    into layout.buildDirectory.dir('generated/sources/template/java')
-    from 'src/main/template'
-    include '**/*.java'
-    expand(
-            version: version,
-            branchName: branchName
-    )
-    outputs.upToDateWhen { false }
-}
+// // create task that copies everything in template directory replacing embedded properties as needed
+// def copyTemplates = tasks.register("versionTemplate", Copy) {
+//     into layout.buildDirectory.dir('generated/sources/template/java')
+//     from 'src/main/template'
+//     include '**/*.java'
+//     expand(
+//             version: version,
+//             branchName: branchName
+//     )
+//     outputs.upToDateWhen { false }
+// }
 // make sure we use generated source
 sourceSets {
     main {
         java {
-            srcDir(copyTemplates)
+            srcDir(layout.buildDirectory.dir('generated/sources/template/java'))
         }
     }
 }
@@ -70,4 +71,14 @@ sourceSets {
 // way to print version during build
 tasks.assemble {
     dependsOn('printVersion')
+}
+
+project.compileJava.dependsOn(createVersionFile)
+gversion {
+  srcDir       = "src/main/java/"
+  classPackage = "frc.robot"
+  className    = "BuildConstants"
+  dateFormat   = "yyyy-MM-dd HH:mm:ss z"
+  timeZone     = "America/New_York" // Use preferred time zone
+  indent       = "  "
 }
